@@ -134,6 +134,23 @@ extern char session_lua[],
 	metrics_tarantool_lua[],
 	metrics_utils_lua[],
 	metrics_version_lua[],
+
+	/* {{{ conf */
+	conf_applier_box_cfg_lua[],
+	conf_applier_console_lua[],
+	conf_applier_fiber_lua[],
+	conf_applier_mkdir_lua[],
+	conf_args_lua[],
+	conf_cluster_config_lua[],
+	conf_configdata_lua[],
+	conf_init_lua[],
+	conf_instance_config_lua[],
+	conf_source_env_lua[],
+	conf_source_file_lua[],
+	conf_utils_log_lua[],
+	conf_utils_schema_lua[],
+	/* }}} conf */
+
 	/* {{{ config */
 	config_cluster_config_lua[],
 	config_instance_config_lua[],
@@ -298,6 +315,74 @@ static const char *lua_sources[] = {
 	config_cluster_config_lua,
 
 	/* }}} config */
+
+	/* {{{ conf */
+
+	/*
+	 * The order is important: we should load base modules
+	 * first and then load ones that use them. Otherwise the
+	 * require() call fails.
+	 *
+	 * General speaking the order here is the following:
+	 *
+	 * - utility functions
+	 * - parts of the general logic
+	 * - configuration sources
+	 * - configuration appliers
+	 * - the entrypoint
+	 */
+
+	/* TODO: Rename those modules to internal.conf. */
+
+	"conf/utils/log",
+	"conf.utils.log",
+	conf_utils_log_lua,
+
+	"conf/utils/schema",
+	"conf.utils.schema",
+	conf_utils_schema_lua,
+
+	"conf/instance_config",
+	"conf.instance_config",
+	conf_instance_config_lua,
+
+	"conf/cluster_config",
+	"conf.cluster_config",
+	conf_cluster_config_lua,
+
+	"conf/configdata",
+	"conf.configdata",
+	conf_configdata_lua,
+
+	"conf/source/env",
+	"conf.source.env",
+	conf_source_env_lua,
+
+	"conf/source/file",
+	"conf.source.file",
+	conf_source_file_lua,
+
+	"conf/applier/box_cfg",
+	"conf.applier.box_cfg",
+	conf_applier_box_cfg_lua,
+
+	"conf/applier/console",
+	"conf.applier.console",
+	conf_applier_console_lua,
+
+	"conf/applier/fiber",
+	"conf.applier.fiber",
+	conf_applier_fiber_lua,
+
+	"conf/applier/mkdir",
+	"conf.applier.mkdir",
+	conf_applier_mkdir_lua,
+
+	"conf/init",
+	"conf",
+	conf_init_lua,
+
+	/* }}} conf */
 
 	NULL
 };
