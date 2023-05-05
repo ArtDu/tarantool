@@ -39,6 +39,7 @@ lua_source(lua_sources lua/merger.lua merger_lua)
 # {{{ config
 lua_source(lua_sources lua/conf/applier/box_cfg.lua     conf_applier_box_cfg_lua)
 lua_source(lua_sources lua/conf/applier/console.lua     conf_applier_console_lua)
+lua_source(lua_sources lua/conf/applier/credentials.lua conf_applier_credentials_lua)
 lua_source(lua_sources lua/conf/applier/fiber.lua       conf_applier_fiber_lua)
 lua_source(lua_sources lua/conf/applier/mkdir.lua       conf_applier_mkdir_lua)
 lua_source(lua_sources lua/conf/cluster_config.lua      conf_cluster_config_lua)
