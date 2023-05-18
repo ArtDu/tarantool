@@ -1506,6 +1506,42 @@ public:
 			     old_index_def_arg) {}
 };
 
+class DisableFuncIndex: public AlterSpaceOp
+{
+	struct index_def *new_index_def;
+	struct index_def *old_index_def;
+public:
+	DisableFuncIndex(struct alter_space *alter,
+			 struct index_def *old_index_def_arg)
+		: AlterSpaceOp(alter), old_index_def(old_index_def_arg)
+	{
+		/*
+		 * This class assumes the space engine is memtx. Please see
+		 * RebuildFuncIndex implementation for required multi-engine
+		 * code.
+		 */
+		assert(!strcmp(alter->old_space->engine->name, "memtx"));
+		new_index_def = index_def_dup_xc(old_index_def);
+		index_def_set_func(new_index_def, NULL);
+	}
+
+	virtual void alter_def(struct alter_space *alter);
+	virtual ~DisableFuncIndex();
+};
+
+void
+DisableFuncIndex::alter_def(struct alter_space *alter)
+{
+	rlist_del_entry(old_index_def, link);
+	index_def_list_add(&alter->key_list, new_index_def);
+}
+
+DisableFuncIndex::~DisableFuncIndex()
+{
+	if (new_index_def != NULL)
+		index_def_delete(new_index_def);
+}
+
 /** TruncateIndex - truncate an index. */
 class TruncateIndex: public AlterSpaceOp
 {
@@ -5268,10 +5304,21 @@ on_replace_dd_func_index(struct trigger *trigger, void *event)
 	auto scoped_guard = make_scoped_guard([=] {alter_space_delete(alter);});
 	if (alter_space_move_indexes(alter, 0, index->def->iid) != 0)
 		return -1;
-	try {
-		(void) new RebuildFuncIndex(alter, index->def, func);
-	} catch (Exception *e) {
-		return -1;
+	if (func != NULL) {
+		/* Set func, rebuild the functional index. */
+		try {
+			(void)new RebuildFuncIndex(alter, index->def, func);
+		} catch (Exception *e) {
+			return -1;
+		}
+	} else {
+		/* Reset func, disable the functional index. */
+		try {
+			(void)new DisableFuncIndex(alter, index->def);
+		}
+		catch (Exception *e) {
+			return -1;
+		}
 	}
 	if (alter_space_move_indexes(alter, index->def->iid + 1,
 				     space->index_id_max + 1) != 0)
