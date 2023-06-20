@@ -62,9 +62,9 @@ end
 function methods._alert(self, alert)
     assert(alert.type == 'error' or alert.type == 'warn')
     if alert.type == 'error' then
-        log.error(alert.error)
+        log.error(alert.message)
     else
-        log.warn(alert.error)
+        log.warn(alert.message)
     end
     alert.timestamp = datetime.now()
     table.insert(self._alerts, alert)
@@ -269,7 +269,7 @@ function methods.reload(self)
         ok, err = pcall(self._apply, self)
     end
     if not ok then
-        self:_alert({type = 'error', error = err})
+        self:_alert({type = 'error', message = err})
         self._alerts_applied = self._alerts
         error(err)
     end
