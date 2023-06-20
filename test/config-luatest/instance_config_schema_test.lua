@@ -656,3 +656,32 @@ g.test_app = function()
 
     t.assert_equals(nil, instance_config:apply_default().app)
 end
+
+-- TODO: Enable these test cases closer to the 3.0.0 release, when
+-- the schema will be frozen.
+--[[
+local bad_config_cases = {
+    -- Verify config.version.
+    no_config = {
+        iconfig = {},
+        err = '[instance_config] config.version is mandatory',
+    },
+    no_config_version = {
+        iconfig = {config = {}},
+        err = '[instance_config] config.version is mandatory',
+    },
+    unknown_config_version = {
+        iconfig = {config = {version = '0.0.0'}},
+        err = '[instance_config] config.version: Got 0.0.0, but only the ' ..
+            'following values are allowed: 3.0.0'
+    },
+}
+
+for case_name, case in pairs(bad_config_cases) do
+    g['test_' .. case_name] = function()
+        t.assert_error_msg_equals(case.err, function()
+            instance_config:validate(case.iconfig)
+        end)
+    end
+end
+]]--
