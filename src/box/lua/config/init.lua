@@ -245,20 +245,9 @@ function methods._startup(self, instance_name, config_file)
     self._instance_name = instance_name
     self._config_file = config_file
 
-    self._alerts = {}
-    local ok, err = pcall(self._initialize, self)
-    if ok then
-        ok, err = pcall(self._collect, self)
-    end
-    if ok then
-       ok, err = pcall(self._apply, self)
-    end
-    if not ok then
-        self:_alert({type = 'error', message = err})
-        self._alerts_applied = self._alerts
-        error(err)
-    end
-    self._alerts_applied = self._alerts
+    self:_initialize()
+    self:_collect({skip_sync = false})
+    self:_apply()
 end
 
 function methods.get(self, path)
