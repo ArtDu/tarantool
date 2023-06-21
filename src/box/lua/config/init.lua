@@ -74,7 +74,7 @@ function methods._register_source(self, source)
     assert(type(source) == 'table')
     if source.type ~= 'instance' and source.type ~= 'cluster' then
         error("[source %q] source.type must be 'instance' or 'cluster'",
-            tostring(source.type))
+            tostring(source.type), 0)
     end
     assert(source.sync ~= nil)
     assert(source.get ~= nil)
@@ -253,7 +253,7 @@ end
 function methods.get(self, path)
     selfcheck(self, 'get')
     if self._configdata_applied == nil then
-        error('config:get(): no instance config available yet')
+        error('config:get(): no instance config available yet', 0)
     end
     return self._configdata_applied:get(path, {use_default = true})
 end
@@ -261,7 +261,7 @@ end
 function methods.reload(self)
     selfcheck(self, 'reload')
     if self._configdata_applied == nil then
-        error('config:reload(): no instance config available yet')
+        error('config:reload(): no instance config available yet', 0)
     end
     self._alerts = {}
     local ok, err = pcall(self._collect, self)
@@ -271,7 +271,7 @@ function methods.reload(self)
     if not ok then
         self:_alert({type = 'error', message = err})
         self._alerts_applied = self._alerts
-        error(err)
+        error(err, 0)
     end
     self._alerts_applied = self._alerts
 end
