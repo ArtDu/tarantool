@@ -57,22 +57,43 @@ local Server = luatest.Server:inherit({})
 
 -- Adds the following options:
 --
--- * config_file
+-- * config_file (string)
+--
+--   An argument of the `--config <...>` CLI option.
+--
+--   Used to deduce advertise URI to connect net.box to the
+--   instance.
+--
+--   The special value '' means running without `--config <...>`
+--   CLI option (but still pass `--name <alias>`).
+-- * remote_config (table)
+--
+--   If `config_file` is not passed, this config value is used to
+--   deduce the advertise URI to connect net.box to the instance.
 Server.constructor_checks = fun.chain(Server.constructor_checks, {
     config_file = 'string',
+    remote_config = '?table',
 }):tomap()
 
 function Server:initialize()
     if self.config_file ~= nil then
         self.command = arg[-1]
-        self.args = {'--name', self.alias, '--config', self.config_file}
+        self.args = {'--name', self.alias}
 
-        local fh = fio.open(self.config_file, {'O_RDONLY'})
-        self.config = yaml.decode(fh:read())
-        fh:close()
+        if self.config_file ~= '' then
+            table.insert(self.args, '--config')
+            table.insert(self.args, self.config_file)
 
-        self.net_box_uri = find_advertise_uri(self.config, self.alias,
-            self.chdir)
+            local fh = fio.open(self.config_file, {'O_RDONLY'})
+            self.config = yaml.decode(fh:read())
+            fh:close()
+        end
+
+        if self.net_box_uri == nil then
+            local config = self.config or self.remote_config
+            self.net_box_uri = find_advertise_uri(config, self.alias,
+                self.chdir)
+        end
     end
     getmetatable(getmetatable(self)).initialize(self)
 end
