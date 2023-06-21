@@ -1134,20 +1134,6 @@ run_script_f(va_list ap)
 
 	int is_a_tty = isatty(STDIN_FILENO);
 
-	if (instance->name) {
-		/* require('config'):_startup(name, config) */
-		if (lua_require_lib(L, "config") != 0)
-			goto error;
-		lua_pushstring(L, "_startup");
-		lua_gettable(L, -2);
-		lua_pushvalue(L, -2);
-		lua_pushstring(L, instance->name);
-		lua_pushstring(L, instance->config);
-		if (luaT_call(L, 3, 0) != 0)
-			goto error;
-		lua_settop(L, 0);
-		goto end;
-	}
 	if (bytecode) {
 		if (lua_require_lib(L, "internal.dobytecode") != 0)
 			goto error;
