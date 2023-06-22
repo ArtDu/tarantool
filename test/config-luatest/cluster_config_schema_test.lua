@@ -226,6 +226,14 @@ g.test_example_replicaset = function()
     cluster_config:validate(config)
 end
 
+g.test_example_credentials = function()
+    local config_file = fio.abspath('doc/examples/config/credentials.yaml')
+    local fh = fio.open(config_file, {'O_RDONLY'})
+    local config = yaml.decode(fh:read())
+    fh:close()
+    cluster_config:validate(config)
+end
+
 -- TODO: Enable these test cases closer to the 3.0.0 release, when
 -- the schema will be frozen.
 --[[
