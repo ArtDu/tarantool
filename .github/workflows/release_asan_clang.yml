@@ -1,4 +1,4 @@
-name: release_asan_clang11
+name: release_asan_clang
 
 on:
   push:
@@ -31,7 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  release_asan_clang11:
+  release_asan_clang:
     # Run on push to the 'master' and release branches of tarantool/tarantool
     # or on pull request if the 'full-ci' label is set.
     if: github.repository == 'tarantool/tarantool' &&
@@ -50,7 +50,15 @@ jobs:
       - uses: ./.github/actions/environment
       - name: Install deps
         uses: ./.github/actions/install-deps-debian
+      - name: Set up Clang
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: 13
+          cc: 0
       - name: test
+        env:
+          CC: clang-13
+          CXX: clang++-13
         run: make -f .test.mk test-release-asan
       - name: Send VK Teams message on failure
         if: failure()
