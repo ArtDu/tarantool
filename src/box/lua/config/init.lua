@@ -115,8 +115,8 @@ function methods._initialize(self)
 end
 
 function methods._collect(self, opts)
-    local opts = opts or {}
-    local skip_sync = opts.skip_sync
+    assert(type(opts) == 'table')
+    local sync_source = opts.sync_source
 
     local iconfig = {}
     local cconfig = {}
@@ -132,7 +132,7 @@ function methods._collect(self, opts)
         -- pass currently collected instance config as the second
         -- argument. The 'config' section of the config may
         -- contain a configuration needed for a source.
-        if not skip_sync then
+        if sync_source == source.name or sync_source == 'all' then
             source.sync(self, iconfig)
         end
 
@@ -246,7 +246,7 @@ function methods._startup(self, instance_name, config_file)
     self._config_file = config_file
 
     self:_initialize()
-    self:_collect({skip_sync = false})
+    self:_collect({sync_source = 'all'})
     self:_apply()
 end
 
@@ -258,22 +258,30 @@ function methods.get(self, path)
     return self._configdata_applied:get(path, {use_default = true})
 end
 
-function methods.reload(self)
-    selfcheck(self, 'reload')
+function methods._reload_noexc(self, opts)
+    assert(type(opts) == 'table')
     if self._configdata_applied == nil then
-        error('config:reload(): no instance config available yet', 0)
+        return false, 'config:reload(): no instance config available yet'
     end
     self._alerts = {}
-    local ok, err = pcall(self._collect, self)
+    local ok, err = pcall(self._collect, self, opts)
     if ok then
         ok, err = pcall(self._apply, self)
     end
+    assert(not ok or err == nil)
     if not ok then
         self:_alert({type = 'error', message = err})
-        self._alerts_applied = self._alerts
-        error(err, 0)
     end
     self._alerts_applied = self._alerts
+    return ok, err
+end
+
+function methods.reload(self)
+    selfcheck(self, 'reload')
+    local ok, err = self:_reload_noexc({sync_source = 'all'})
+    if not ok then
+        error(err, 0)
+    end
 end
 
 function methods.info(self)
