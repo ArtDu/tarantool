@@ -242,12 +242,15 @@ function methods._apply(self)
 end
 
 function methods._startup(self, instance_name, config_file)
+    assert(self._status == 'uninitialized')
+    self._status = 'startup_in_progress'
     self._instance_name = instance_name
     self._config_file = config_file
 
     self:_initialize()
     self:_collect({sync_source = 'all'})
     self:_apply()
+    self._status = 'ready'
 end
 
 function methods.get(self, path)
@@ -260,9 +263,16 @@ end
 
 function methods._reload_noexc(self, opts)
     assert(type(opts) == 'table')
-    if self._configdata_applied == nil then
+    if self._status == 'uninitialized' then
         return false, 'config:reload(): no instance config available yet'
     end
+    if self._status == 'startup_in_progress' or
+       self._status == 'reload_in_progress' then
+        return false, 'config:reload(): instance configuration is already in '..
+                      'progress'
+    end
+    self._status = 'reload_in_progress'
+
     self._alerts = {}
     local ok, err = pcall(self._collect, self, opts)
     if ok then
@@ -273,6 +283,18 @@ function methods._reload_noexc(self, opts)
         self:_alert({type = 'error', message = err})
     end
     self._alerts_applied = self._alerts
+
+    -- Set proper status depending on received alerts.
+    local status = 'ready'
+    for _, alert in pairs(self._alerts_applied) do
+        assert(alert.type == 'error' or alert.type == 'warn')
+        if alert.type == 'error' then
+            status = 'check_errors'
+            break
+        end
+        status = 'check_warnings'
+    end
+    self._status = status
     return ok, err
 end
 
@@ -289,6 +311,7 @@ function methods.info(self)
     return {
         alerts = self._alerts_applied,
         meta = self._meta_applied,
+        status = self._status,
     }
 end
 
@@ -314,6 +337,8 @@ local function new()
         _meta = {},
         -- Metadata from the last successful application of the configuration.
         _meta_applied = {},
+        -- Current status.
+        _status = 'uninitialized',
     }, mt)
 end
 
