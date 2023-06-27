@@ -5,6 +5,7 @@ on:
     branches:
       - 'master'
       - 'release/3.*'
+      - 'foxzi/static_build_packages'
     tags:
       - '**'
   pull_request:
@@ -32,13 +33,6 @@ concurrency:
 
 jobs:
   static_build_packages:
-    # Run on push to the 'master' and release branches of tarantool/tarantool
-    # or on pull request if the 'full-ci' or 'static-build-ci' label is set.
-    if: github.repository == 'tarantool/tarantool' &&
-        ( github.event_name != 'pull_request' ||
-          contains(github.event.pull_request.labels.*.name, 'full-ci') ||
-          contains(github.event.pull_request.labels.*.name, 'static-build-ci') )
-
     runs-on: ubuntu-20.04-self-hosted
 
     steps:
@@ -53,7 +47,7 @@ jobs:
         uses: ./.github/actions/install-deps-debian
       - name: Build static packages
         env:
-            CMAKE_TARANTOOL_ARGS: -DLUAJIT_ENABLE_GC64=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            CMAKE_TARANTOOL_ARGS: '-DLUAJIT_ENABLE_GC64=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo'
         run: make -f .pack.mk package-static
       - name: Send VK Teams message on failure
         if: failure()
