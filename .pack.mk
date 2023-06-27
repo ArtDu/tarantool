@@ -95,5 +95,22 @@ source: prepare
 	TARBALL_COMPRESSOR=gz \
 	./packpack/packpack tarball
 
+source-package-static:
+	if [ -n "${GIT_TAG}" ]; then \
+		export VERSION="$$(echo ${GIT_TAG} | sed 's/-/~/')"; \
+	else \
+		export VERSION="$$(echo ${GIT_DESCRIBE} | sed ${SED_REPLACE_VERSION_REGEX} | sed 's/-/~/').dev"; \
+	fi; \
+	echo VERSION=$${VERSION}; \
+	mkdir -p ./build/; \
+	echo $(git describe) > ./VERSION; \
+	tar \
+		--exclude=.git --exclude='.gitignore' --exclude='.gitmodules' --exclude=./build/ \
+		--exclude=FreeBSD --exclude=debian --exclude=rpm --exclude=rump --exclude=apk \
+		--transform="s,^\./,tarantool-$${VERSION}/," \
+		--show-transformed \
+		-caPf ./build/tarantool-$${VERSION}.tar.gz . ; \
+	rm ./VERSION
+
 source-deploy: source
 	aws --endpoint-url ${AWS_S3_ENDPOINT_URL} s3 cp build/*.tar.gz ${S3_SOURCE_REPO_URL}/ --acl public-read
